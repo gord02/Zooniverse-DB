@@ -1,0 +1,7 @@
+# Defaults
+default:
+  backend:
+    name: zooniverse-db
+  components:
+    blueprints:
+      - zoondb.backend.rest
