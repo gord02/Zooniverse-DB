@@ -10,6 +10,7 @@ python = "^3.7"
 click = "^7.1.0"
 maestro = {git = "ssh://git@github.com/CHIMEFRB/maestro.git", branch="main"}
 chime-frb-api = "^2021.5.28"
+motor = "^2.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0.1"

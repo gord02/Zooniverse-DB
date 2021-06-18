@@ -2,6 +2,13 @@
 default:
   backend:
     name: zooniverse-db
+    host: 127.0.0.1
+    port: 8000
+  resources:
+    mongodb:
+      host: "localhost"
+      port: 3000
+      db_name: 'zooniverseDB'
   components:
     blueprints:
       - zoondb.backend.rest
