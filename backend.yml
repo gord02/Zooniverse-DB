@@ -5,10 +5,22 @@ default:
     host: 127.0.0.1
     port: 8000
   resources:
-    mongodb:
-      host: "localhost"
-      port: 3000
-      db_name: 'zooniverseDB'
+    # mongodb:
+    #   host: "localhost"
+      # port: 3000
+      # client: motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:3000")
   components:
     blueprints:
       - zoondb.backend.rest
+development:
+  resources:
+    mongodb:
+      host: "localhost"
+      db_name: 'zooniverseDB'
+
+
+# # Create a new connection to a single MongoDB instance at host:port.
+# client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:8000")
+
+# # # Connection to a database 
+# db = client['zooniverseDB']
