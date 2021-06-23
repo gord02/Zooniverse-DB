@@ -7,11 +7,11 @@ import motor.motor_asyncio
 import asyncio
 
 # Create a new connection to a single MongoDB instance at host:port.
-client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
-# # Connection to a database 
-db = client['zooniverseDB']
-# Connect to collection in the DB zooniverseDB
-events = db['events']
+# client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+# # # Connection to a database 
+# db = client['zooniverseDB']
+# # Connect to collection in the DB zooniverseDB
+# events = db['events']
 
 class ZooniverseClassificationReport:
     event = doc.Integer("Event Number", required=True)
@@ -107,9 +107,6 @@ async def createEvent():
             event_model["expert_classification"] = np.random.choice(
                 ["INCOMPLETE", "GOOD", "BAD"]
             )
-        # r = requests.post(url, json=event_model)
-        # if not r.status_code == 200:
-        #     print(r.text)
     event = event_model
 
 # Runs createEvent function asynchronously 

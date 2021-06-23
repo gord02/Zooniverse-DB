@@ -2,6 +2,7 @@
 from sanic.request import Request
 from sanic.response import HTTPResponse, json
 from sanic import Sanic
+import json as json_converter
 
 # allows sanic and mongoDB to work together 
 import motor.motor_asyncio
@@ -13,47 +14,42 @@ from sanic import Blueprint
 # imports simple way of applying doc string through framework sanic
 from sanic_openapi import doc
 
-
-import chime_frb_api
-from chime_frb_api import frb_master
-
-
-from zoondb.routines import composite, simple
-
-# import schema
+from zoondb.backend import schema
 
 # NOTE: The URL Prefix for your backend has to be the name of the backend
 blueprint = Blueprint("zoondb Backend", url_prefix="/")
 
-# @doc.consumes(schema.Event)
+@doc.consumes(schema.Event)
 @blueprint.post("transfer-event")
 @doc.summary("CHIME/FRB event data is being sent to server so that it can be stored in zooniverse database")
 async def get_event_data_from_CHIME(request):
     try:
         client = request.app.mongo.client
-        data = request.args
+        
+        req_data = request.args
+        body = req_data['body'] 
+        data = body[0]
+        data_dict = json_converter.loads(data)
 
-        # Should this event number be used as the event id?
-        event_number = data["event"]
-        dm_value = data["dm"]
-        snr_value = data["snr"]
-        beams_value = data["beams"]
-        data_path = data["data_path"]
-        transfer_status = data["transfer_status"]
+        dm_value = data_dict["dm"]
+        snr_value = data_dict["snr"]
+        # beams_value = data_dict["beams"]
+        data_path = data_dict["data_path"]
+        # transfer_status = data_dict["transfer_status"]
 
         # code to add new event to database 
         document = {
-            'event': event_number,
-            'dm': dm_value, 
-            'snr': snr_value,
-            'beams': beams_value, 
-            'data_paths': data_path,
-            'transfer_status': transfer_status,
-            # 'zooniverse_classification': 'INCOMPLETE',
-            # 'expert_classification': 'INCOMPLETE'
+            # "event": event_number,
+            "dm": dm_value, 
+            "snr": snr_value,
+            # "beams": beams_value, 
+            "data_paths": data_path,
+            # "transfer_status": transfer_status,
+            # "zooniverse_classification": "INCOMPLETE",
+            # "expert_classification": "INCOMPLETE"
         }
-        result = await client.zooniverseDB.events.insert_one(document)
-        print('result %s' % repr(result.inserted_id))
+        # result = await client.zooniverseDB.events.insert_one(document)
+        # print('result %s' % repr(result.inserted_id))
         return  json(True)
 
     except Exception as error:
@@ -61,7 +57,7 @@ async def get_event_data_from_CHIME(request):
         return json(str(error))
 
 @doc.summary("Fetch an event")
-# @doc.consumes(schema.Event)
+@doc.consumes(schema.Event)
 @blueprint.get("event/<event_no>")
 async def get_event(request, event_no):
     try:
@@ -80,7 +76,7 @@ async def get_event(request, event_no):
         raise
 
 @doc.summary("Fetch all events")
-# @doc.consumes(schema.Event)
+@doc.consumes(schema.Event)
 @blueprint.get("all-events")
 async def getAllEvents(request):
     try:
@@ -105,7 +101,7 @@ async def getAllEvents(request):
         return json(str(error))
         
 @doc.summary("Update event.")
-# @doc.consumes(schema.Event)
+@doc.consumes(schema.Event)
 @blueprint.put("event/<event_no>")
 async def update_event(request, event_no):
     print(request.json)
@@ -120,7 +116,7 @@ async def update_event(request, event_no):
         raise
 
 @doc.summary("Delete event")
-# @doc.consumes(schema.Event)
+@doc.consumes(schema.Event)
 @blueprint.delete("event/<event_no>")
 async def delete_event(request, event_no):
     try:
@@ -132,7 +128,7 @@ async def delete_event(request, event_no):
         raise
 
 @doc.summary("Fetch events to transfer to zooniverse.")
-# @doc.produces([schema.Event])
+@doc.produces([schema.Event])
 @blueprint.get("events-for-transfer")
 async def fetch_events_for_transfer(request):
     try:
@@ -150,7 +146,7 @@ async def fetch_events_for_transfer(request):
         raise
 
 @doc.summary("Fetch events to transfer to cleanup.")
-# @doc.produces([schema.Event])
+@doc.produces([schema.Event])
 @blueprint.get("events-for-cleanup")
 async def fetch_events_for_cleanup(request):
     try:
@@ -168,7 +164,7 @@ async def fetch_events_for_cleanup(request):
         raise
 
 @doc.summary("Fetch events for expert verification.")
-# @doc.produces([schema.Event])
+@doc.produces([schema.Event])
 @blueprint.get("events-for-experts")
 async def fetch_events_for_experts(request):
     try:
@@ -222,6 +218,12 @@ async def expert_classification(request, event_no, classification):
 
 # =========
 
+
+# import chime_frb_api
+# from chime_frb_api import frb_master
+
+# from zoondb.routines import composite, simple
+
 # @doc.summary("Seeder Routine")
 # @blueprint.get("simple")
 # async def get_seeder(request: Request) -> HTTPResponse:
@@ -238,7 +240,6 @@ async def expert_classification(request, event_no, classification):
 #     """
 #     example = simple.Simple('hex')
 #     return json(example.seedling())
-
 
 # @doc.summary("Composite Routine")
 # @blueprint.get("composite")
