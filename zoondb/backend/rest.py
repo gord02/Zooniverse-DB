@@ -27,33 +27,35 @@ async def get_event_data_from_CHIME(request):
         client = request.app.mongo.client
         
         req_data = request.args
-        body = req_data['body'] 
+        body = req_data["body"] 
         data = body[0]
         data_dict = json_converter.loads(data)
 
+        event_number = data_dict["event"]
         dm_value = data_dict["dm"]
         snr_value = data_dict["snr"]
-        # beams_value = data_dict["beams"]
+        beams_value = data_dict["beams"]
         data_path = data_dict["data_path"]
-        # transfer_status = data_dict["transfer_status"]
+        transfer_status = data_dict["transfer_status"]
 
         # code to add new event to database 
         document = {
-            # "event": event_number,
+            "event": event_number,
             "dm": dm_value, 
             "snr": snr_value,
-            # "beams": beams_value, 
+            "beams": beams_value, 
             "data_paths": data_path,
-            # "transfer_status": transfer_status,
+            "transfer_status": transfer_status,
             # "zooniverse_classification": "INCOMPLETE",
             # "expert_classification": "INCOMPLETE"
         }
-        # result = await client.zooniverseDB.events.insert_one(document)
-        # print('result %s' % repr(result.inserted_id))
+
+        result = await client.zooniverseDB.events.insert_one(document)
+        print("ID of added document %s" % repr(result.inserted_id))
         return  json(True)
 
     except Exception as error:
-        print(str(error))
+        print("error: ", str(error))
         return json(str(error))
 
 @doc.summary("Fetch an event")
