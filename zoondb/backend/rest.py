@@ -90,12 +90,21 @@ async def getAllEvents(request):
         # for document in await cursor.to_list(length=100):
         #     print(document)
 
-        # items = []
+        items = []
         # docs = client.zooniverse.events.find({}, projection={"_id": 0})
-        # async for d in docs:
-        #     items.append(d)
+        docs = client.zooniverseDB.events.find({})
+        async for d in docs:
+            items.append(d)
         # return json(items)
-
+        # print("items: ", "\n", items)
+        # print("hello")
+        first_doc = items[0]
+        id = first_doc['_id']
+        print("id: ", id)
+        # for vals in first_doc:
+        #     print("val: ", vals, "type of val: ", type(vals))
+        # id = first_doc._id
+        # print("id: ", id)
         return  json(True)
  
     except Exception as error:
