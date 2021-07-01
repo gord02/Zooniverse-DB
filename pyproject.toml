@@ -12,6 +12,9 @@ chime-frb-api = "^2021.5.28"
 motor = "^2.4.0"
 maestro = {git = "git@github.com:chimefrb/maestro", rev = "main", extras = ["mongodb"]}
 numpy = "^1.20.3"
+python-dotenv = "^0.18.0"
+tqdm = "^4.61.1"
+panoptes-client = "^1.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0.1"
