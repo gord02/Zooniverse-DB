@@ -84,7 +84,7 @@ async def getAllEvents(request):
     try:
         client = request.app.mongo.client
         total_number_of_events = await client.zooniverseDB.events.count_documents({})
-        print("total number of events: ", total_number_of_events)
+        print("total number of events: ", total_number_of_events, " type of: ", type(total_number_of_events))
         
         # cursor = client.zooniverseDB.events.find({})
         # for document in await cursor.to_list(length=100):

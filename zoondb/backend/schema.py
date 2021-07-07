@@ -39,7 +39,8 @@ class ZooniverseClassificationReport:
 class Event:
     event = doc.Integer("Event Number", required=True)
     dm = doc.Float("DM", required=True)
-    snr = doc.Float("snr of the brightest beam", required=True)
+    # snr = doc.Float("snr of the brightest beam", required=True)
+    snr = doc.List( Float(), "snr values of beams", required=True)
     beams = [doc.Integer("beam number", required=True)]
     data_paths = doc.List()
     transfer_status = doc.String(
