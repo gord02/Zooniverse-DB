@@ -38,9 +38,9 @@ async def upload_waterfalls_from_db(project_id):
     total_number_of_waterfalls_not_uploaded = await db.events.count_documents({"subject_id": None, "upload_date": None})
     cursor_filtered = db.events.find({"subject_id": None, "upload_date": None }) 
     if(total_number_of_waterfalls_not_uploaded == 0):
-        logging.info(f'No Waterfalls to upload')
+        logging.info(f' No waterfalls to upload')
         return
-        
+
     for doc in await cursor_filtered.to_list(total_number_of_waterfalls_not_uploaded):
         waterfalls_not_uploaded.append(doc)
 
@@ -96,17 +96,15 @@ async def uploader(waterfall, project):
     # print('updated %s document' % result.modified_count)
 
     # !!!
-    print("upload date: ", date.today().strftime('%Y-%m-%d'))
     metadata = get_real_metadata(waterfall)
-    print("fails at metadata?")
     subject_id = upload_subject(locations=locations, project=project, subject_set_name=subject_set_name, metadata=metadata)
     # subject has been uploaded to Panoptes so now database needs to be updated to reflect this change knowing which specifc document was updated
     result = await db.events.update_one({'_id': id}, {'$set': {{'subject_id': subject_id}}}) 
 
 def get_real_metadata(waterfall):
     return {
-        'event': waterfall.event,
-        'beam': waterfall.beam,
+        'event': waterfall['event'],
+        'beams': waterfall['beams'],
         'upload_date': date.today().strftime('%Y-%m-%d'),
         # !!!
         '#training_subject': False,
@@ -137,10 +135,10 @@ def upload_subject(locations: List, project: Project, subject_set_name: str, met
     # subject is linked to project 
     subject.links.project = project
     for location in locations:
+        # Is it still posssible for me to use this?
         if not os.path.isfile(location):
             raise FileNotFoundError('Missing subject location: {}'.format(location))
         subject.add_location(location)
-    # return ======
     subject.metadata.update(metadata)
 
     # ==
@@ -236,5 +234,9 @@ if __name__ == '__main__':
 
     # Interactions with database need to be done asynchronously 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(upload_waterfalls_from_db(project_id))
+    if not os.path.isfile("/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz"):
+        raise FileNotFoundError('Missing subject location: {}'.format("/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz"))
+    else:
+        print("success")
+    # loop.run_until_complete(upload_waterfalls_from_db(project_id))
     

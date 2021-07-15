@@ -19,7 +19,7 @@ from zoondb.backend import schema
 # NOTE: The URL Prefix for your backend has to be the name of the backend
 blueprint = Blueprint("zoondb Backend", url_prefix="/")
 
-@doc.consumes(schema.Event)
+@doc.consumes(schema.Event, schema.Beams)
 @blueprint.post("transfer-event")
 @doc.summary("CHIME/FRB event data is being sent to server so that it can be stored in zooniverse database")
 async def get_event_data_from_CHIME(request):
@@ -33,19 +33,26 @@ async def get_event_data_from_CHIME(request):
 
         event_number = data_dict["event"]
         dm_value = data_dict["dm"]
-        snr_value = data_dict["snr"]
-        beams_value = data_dict["beams"]
-        data_path = data_dict["data_path"]
-        transfer_status = data_dict["transfer_status"]
+        # transfer_status = data_dict["transfer_status"]
 
+        snr_value = data_dict["snr"]
+        beam_value = data_dict["beam_number"]
+        data_path = data_dict["data_path"]
+
+        
+        # loop through for each beam value?
+        beams_dict = {
+            "snr" : snr_value,
+            "beam" : beam_value,
+            "data_paths": data_path
+        }
         # code to add new event to database 
         document = {
             "event": event_number,
             "dm": dm_value, 
-            "snr": snr_value,
-            "beams": beams_value, 
-            "data_paths": data_path,
-            "transfer_status": transfer_status,
+            # how are multiple beam dict supposed to end up here
+            "beams": beams_dict, 
+            # "transfer_status": transfer_status,
             # "zooniverse_classification": "INCOMPLETE",
             # "expert_classification": "INCOMPLETE"
         }
@@ -85,26 +92,12 @@ async def getAllEvents(request):
         client = request.app.mongo.client
         total_number_of_events = await client.zooniverseDB.events.count_documents({})
         print("total number of events: ", total_number_of_events, " type of: ", type(total_number_of_events))
-        
-        # cursor = client.zooniverseDB.events.find({})
-        # for document in await cursor.to_list(length=100):
-        #     print(document)
 
         items = []
-        # docs = client.zooniverse.events.find({}, projection={"_id": 0})
         docs = client.zooniverseDB.events.find({})
         async for d in docs:
             items.append(d)
-        # return json(items)
-        # print("items: ", "\n", items)
-        # print("hello")
-        first_doc = items[0]
-        id = first_doc['_id']
-        print("id: ", id)
-        # for vals in first_doc:
-        #     print("val: ", vals, "type of val: ", type(vals))
-        # id = first_doc._id
-        # print("id: ", id)
+
         return  json(True)
  
     except Exception as error:

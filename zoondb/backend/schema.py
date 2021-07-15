@@ -2,6 +2,7 @@
 import numpy as np
 # import requests
 
+from mongoengine import connect, Document, FileField, StringField
 from sanic_openapi import doc
 import motor.motor_asyncio
 import asyncio
@@ -35,14 +36,16 @@ class ZooniverseClassificationReport:
     t1_repeating_fraction = doc.Float("t1_repeating_fraction")
     t1_something_weird_fraction = doc.Float("t1_something-weird_fraction")
 
-
-class Event:
+class Beams:
+    snr = doc.Float("snr value", required=True)
+    beam_number = doc.Integer("beam number", required=True)
+    data_paths = doc.List()
+class Event(Document):
     event = doc.Integer("Event Number", required=True)
     dm = doc.Float("DM", required=True)
     # snr = doc.Float("snr of the brightest beam", required=True)
-    snr = doc.List( Float(), "snr values of beams", required=True)
-    beams = [doc.Integer("beam number", required=True)]
-    data_paths = doc.List()
+    beams = [Beams()]
+    # beam = [Beams("beams document", required=True)]
     transfer_status = doc.String(
         "status of the transfer to zooniverse.",
         required=False,
@@ -62,39 +65,46 @@ class Event:
 # The function is used to create event inside database
 async def createEvent():
     event_model: dict = {
-        "event": 1,
-        "dm": 123.4,
-        "snr": 7.9,
-        "beams": [123, 1123],
-        "data_paths": {
-            123: "path to b1",
-            1123: "path to b2",
-        },
+       	"event_number": 9386707,
+		"dm": 715.9,
+		"snr": 15.9,
+		"beam": 123,
+		"data_path": {
+			# "1166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/1166/9386707_1166_intensityML.npz",
+			# "0166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz",
+            "1166": "../../files_for_zoon/data/frb-archiver/9386707_1166_intensityML.npz",
+			"0166": "../../files_for_zoon/data/frb-archiver/9386707_0166_intensityML.npz"
+        } ,
         "transfer_status": "INCOMPLETE",
         "zooniverse_classification": "INCOMPLETE",
         "expert_classification": "INCOMPLETE",
     }
 
     # randomizes the event model so different events can populate the DB.
-    for _ in range(1000):
-        event_model["event"] = int(np.random.choice(range(9386707, 9396707)))
+    for _ in range(10):
+        event_model["event_number"] = int(np.random.choice(range(9386707, 9396707)))
         event_model["dm"] = float(np.random.random() * 10000)
         event_model["snr"] = float(np.random.random() + 7.5)
-        event_model["beams"] = [
-            int(
-                np.random.choice(
-                    list(range(0, 256))
-                    + list(range(1000, 1256))
-                    + list(range(2000, 2256))
-                    + list(range(3000, 3256))
-                )
-            )
-            for _ in range(np.random.choice(range(1, 5)))
-        ]
+        event_model["beam"] = int(np.random.choice(range(3000, 3256)))
+        # event_model["beams"] = [
+        #     int(
+        #         np.random.choice(
+        #             list(range(0, 256))
+        #             + list(range(1000, 1256))
+        #             + list(range(2000, 2256))
+        #             + list(range(3000, 3256))
+        #         )
+        #     )
+        #     for _ in range(np.random.choice(range(1, 5)))
+        # ]
         event_model["data_paths"] = {}
-
-        for beam in event_model["beams"]:
-            event_model["data_paths"][beam] = f"path to {beam}"
+        # for beam in event_model["beams"]:
+        #     event_model["data_paths"][beam] = f"path to {beam}"
+        beam = event_model["beam"]
+        event_model["data_paths"] = {
+            beam: f"../../files_for_zoon/data/frb-archiver/{beam}_intensityML.npz",
+            beam: f"../../files_for_zoon/data/frb-archiver/{beam}_intensityML.npz",
+            }
 
         event_model["transfer_status"] = np.random.choice(
             ["INCOMPLETE"] * 100 + ["COMPLETE"] * 20 + ["CLEANED"] * 30 + ["FAILED"] * 10
@@ -108,7 +118,38 @@ async def createEvent():
             event_model["expert_classification"] = np.random.choice(
                 ["INCOMPLETE", "GOOD", "BAD"]
             )
-    event = event_model
+
+        event = event_model
+        event_number = event["event_number"]
+        dm_value = event["dm"]
+        transfer_status =  event["transfer_status"],
+        zooniverse_classification = event["zooniverse_classification"],
+        expert_classification = event["expert_classification"]
+
+        snr_value = event["snr"]
+        beam_number = event["beam"]
+        data_path = event["data_path"]
+
+        beams_dict = {
+            "snr" : snr_value,
+            "beam" : beam_number,
+            "data_paths": data_path
+        }
+        document = {
+            "event": event_number,
+            "dm": dm_value, 
+            # how are multiple beam dict supposed to end up here
+            "beams": beams_dict, 
+            "transfer_status": transfer_status,
+            "zooniverse_classification": zooniverse_classification,
+            "expert_classification":expert_classification
+        }
+        # Create a new connection to a single MongoDB instance at host:port.
+        client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+        # Connection to a database 
+        db = client['zooniverseDB']
+        result = await client.zooniverseDB.events.insert_one(document)
+        # print("ID of added document %s" % repr(result.inserted_id))
 
 # Runs createEvent function asynchronously 
 loop = asyncio.get_event_loop()
