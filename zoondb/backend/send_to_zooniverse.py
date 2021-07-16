@@ -7,6 +7,8 @@ import argparse
 import time
 import math
 from typing import List, Dict
+import numpy as np
+
 
 import asyncio
 import nest_asyncio
@@ -48,7 +50,6 @@ async def upload_waterfalls_from_db(project_id):
 
 def upload_waterfalls(waterfalls, project_id): 
     authenticate()
-    # ============here==================
     project = Project(project_id)
     logging.info(f'Uploading {len(waterfalls)} subjects')
 
@@ -65,7 +66,6 @@ async def uploader(waterfall, project):
 
     # Gets subject_set name
     subject_set = get_or_create_subject_set(project.id)
-    subject_set_name = subject_set.display_name
 
     id = waterfall['_id']
     # Updates the document in the database to have an upload date
@@ -73,7 +73,7 @@ async def uploader(waterfall, project):
     result = await db.events.update_one({'_id': id}, {'$set': {'upload_date': the_date}}) 
 
     metadata = get_real_metadata(waterfall)
-    subject_id = upload_subject(locations=locations, project=project, subject_set_name=subject_set_name, metadata=metadata)
+    subject_id = upload_subject(locations=locations, project=project, metadata=metadata)
     # subject has been uploaded to Panoptes so now database needs to be updated to reflect this change knowing which specifc document was updated
     result = await db.events.update_one({'_id': id}, {'$set': {'subject_id': subject_id}}) 
 
@@ -86,40 +86,23 @@ def get_real_metadata(waterfall):
         '#feedback_subject': False
     }
 
-# get data of waterfall
-# def get_subject_set_name_from_subfolder(waterfall):
-#     # Query panoptes to see if date is already a subject set, if not, create one
-#     # subfolder = waterfall.subfolder
-#     # if subfolder.startswith('/'):
-#     #     subfolder = subfolder[1:]
 
-#     print("Date today: ", date.today())
-#     # return subfolder.replace('/', '__') # name of parent folder
-#     # return date.today() # name of parent folder
-#     return 'test-subject-set'
+# == Interactions with Panoptes ==
 
-
-
-
-# pure panoptes utilities below, could extract
-
-def upload_subject(locations: List, project: Project, subject_set_name: str, metadata: Dict):
-    # ============here==================
+def upload_subject(locations: List, project: Project, metadata: Dict):
     # creation of a subject
     subject = Subject()
     # subject is linked to project 
     subject.links.project = project
     # path_prefix = "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/"
     test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
-    # for location in locations:
-    for plot in test_plots:
-        if not os.path.isfile(plot):
-            raise FileNotFoundError('Missing subject location: {}'.format(plot))
-
-        subject.add_location(plot)
+    for location in locations:
+        i = int(np.random.choice(range(0, 2)))
+        if not os.path.isfile(test_plots[i]):
+            raise FileNotFoundError('Missing subject location: {}'.format(test_plots[i]))
+        subject.add_location(test_plots[i])
     subject.metadata.update(metadata)
 
-    subject_set_name = subject_set_name 
     # Gets subject set 
     subject_set = get_or_create_subject_set(project.id)
 
@@ -136,62 +119,33 @@ def authenticate():
     Panoptes.connect(username = auth_username, password = auth_password)
 
 def get_or_create_subject_set(project_id):
-    # Returns the test subject set created for testing 
-    # project = Project.where(project_id = project_id)
-    # print("project id: ", project.project_id)
-    test_subject_set = SubjectSet.find(96428)
-    # print("test_subject_set name: ", test_subject_set.display_name)
-    return test_subject_set
-    # list_of_subject_sets = []
-    # for subject_set in project.links.subject_sets:
-    #     list_of_subject_sets.append(subject_set.display_name)
-    # for subject in project.links.subject_sets:
-    #     if(subject_set_test == subject.display_name):
-    #         return subject
-    # return create_subject_set(project_id)
-
-
-    # return subject_set_test
+    # gets the project we are working on
+    project = Project.find(project_id)
     list_of_subject_sets = []
-    # loops through subject sets inside of subject sets list
+    #  loops through subject sets inside of subject sets list and stores all subject set names into a list
     for subject_set in project.links.subject_sets:
         # Puts the name, which is actually the date, of each subject_set into list
         list_of_subject_sets.append(subject_set.display_name)
+
+    # gets the specifc subject set I am working on for testing
+    # This should be changed to today's date variable to ensure no duplicates of a subject set with the same name
     # for each name of a subject_set inside list, check if the current date is already present in list
-    for subject in project.links.subject_sets:
-        if(date.today() == subject.display_name):
+    for subject_set in project.links.subject_sets:
+        # if(date.today() == subject.display_name):
+        if('subject_set_test' == subject_set.display_name):
             # subject_set of current date already exists so use that subject set
-            return subject
+            return subject_set
+
     # subject set needs to be created
     return create_subject_set(project_id)
- 
 
-# does this need to be a function on its own?
-# def make_subject_sets(project_id, names):
-#     # to avoid threading issues where I might try to make the same subject set twice, make them all at the start
-#     for name in names:
-#         return get_or_create_subject_set(project_id, name)
-
-
-# does this need to be its own function?
-# def get_subject_set(project_id, name):
-#     # will fail if duplicate display name - don't do this (not allowed, perhaps)
-#     try:
-#         return next(SubjectSet.where(project_id=project_id, display_name=name))
-#     except StopIteration:
-#         raise ValueError(f'Project {project_id} has no subject set {name}')
-
-# does this need to be its own function?
 def create_subject_set(project_id):
-    # ============here==================
     # creating subject set
     subject_set = SubjectSet()
     subject_set.links.project = Project(project_id)
     name = date.today()
-    subject_set.display_name = 'subject_set_test'
-    # subject_set.display_name = name
+    subject_set.display_name = name
     subject_set.save()
-    # return subject set test
     return subject_set
 
 if __name__ == '__main__':
