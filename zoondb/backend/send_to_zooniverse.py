@@ -3,68 +3,45 @@ import json
 import os
 from datetime import date
 import logging
-import asyncio
-import nest_asyncio
-nest_asyncio.apply()
-# __import__('IPython').embed()
 import argparse
 import time
 import math
 from typing import List, Dict
 
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
 import motor.motor_asyncio
-import numpy as np #dont need
-from dotenv import load_dotenv
 
-# import pandas as pd #dont need
+from dotenv import load_dotenv
 from tqdm import tqdm
+
+# Zooniverse imports
 # The new Zooniverse API for supporting user-created projects.
 from panoptes_client import Panoptes, Project, SubjectSet, Subject
+import magic
 
 
 # Create a new connection to a single MongoDB instance at host:port.
 client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
 # Connection to a database 
 db = client['zooniverseDB']
-# # Connect to collection in the DB zooniverseDB
-# events = db['events']
 
 # gets waterfall plots from database
 async def upload_waterfalls_from_db(project_id):
     waterfalls_not_uploaded = []
-
-    # calcuate snr rank for beams then query database using that value
-    # HIghest snr value belongs to highest beam value
     total_number_of_waterfalls_not_uploaded = await db.events.count_documents({"subject_id": None, "upload_date": None})
     cursor_filtered = db.events.find({"subject_id": None, "upload_date": None }) 
     if(total_number_of_waterfalls_not_uploaded == 0):
         logging.info(f' No waterfalls to upload')
         return
-
     for doc in await cursor_filtered.to_list(total_number_of_waterfalls_not_uploaded):
         waterfalls_not_uploaded.append(doc)
-
-    for waterfall in waterfalls_not_uploaded:
-        beams = waterfall["beams"]
-        # snrs = waterfall["snr"]
-        # sort array of snr and beam values
-        beams.sort(reverse = True)
-        # snrs.sort(reverse = True)
-
-        for i, beam in enumerate(beams):
-            if(len(beams)>3):
-                del beams[3:len(beams)]
-
-    # prints the results after filtering for only the first three beam values
-    # for i, waterfall in enumerate(waterfalls_not_uploaded):
-    #     print(i , " ", waterfall['beams'])
-
     logging.info(f'Waterfalls to upload: {len(waterfalls_not_uploaded)}')
 
     authenticate()
     # need to be called here?
     get_or_create_subject_set(project_id)
-    # logging.info('Sending to subject sets: \n')
 
     upload_waterfalls(waterfalls_not_uploaded, project_id)
 
@@ -73,16 +50,17 @@ def upload_waterfalls(waterfalls, project_id):
     authenticate()
     # ============here==================
     project = Project(project_id)
-
     logging.info(f'Uploading {len(waterfalls)} subjects')
 
     for waterfall in tqdm(waterfalls):
-        # uploader(waterfall, project)
         task = loop.create_task(uploader(waterfall, project))
         loop.run_until_complete(task)
 
 async def uploader(waterfall, project):
-    locations = waterfall['data_paths'].values()
+    locations = waterfall['beams']['data_paths'].values()
+    # plot = list(locations)[0]
+    # plot_smooth = list(locations)[1]
+    # locations = waterfall['data_paths'].values()
     # print("locations: ", locations)
 
     # Gets subject_set name
@@ -93,20 +71,17 @@ async def uploader(waterfall, project):
     # Updates the document in the database to have an upload date
     the_date = str(date.today())
     result = await db.events.update_one({'_id': id}, {'$set': {'upload_date': the_date}}) 
-    # print('updated %s document' % result.modified_count)
 
-    # !!!
     metadata = get_real_metadata(waterfall)
     subject_id = upload_subject(locations=locations, project=project, subject_set_name=subject_set_name, metadata=metadata)
     # subject has been uploaded to Panoptes so now database needs to be updated to reflect this change knowing which specifc document was updated
-    result = await db.events.update_one({'_id': id}, {'$set': {{'subject_id': subject_id}}}) 
+    result = await db.events.update_one({'_id': id}, {'$set': {'subject_id': subject_id}}) 
 
 def get_real_metadata(waterfall):
     return {
         'event': waterfall['event'],
         'beams': waterfall['beams'],
         'upload_date': date.today().strftime('%Y-%m-%d'),
-        # !!!
         '#training_subject': False,
         '#feedback_subject': False
     }
@@ -134,16 +109,17 @@ def upload_subject(locations: List, project: Project, subject_set_name: str, met
     subject = Subject()
     # subject is linked to project 
     subject.links.project = project
-    for location in locations:
-        # Is it still posssible for me to use this?
-        if not os.path.isfile(location):
-            raise FileNotFoundError('Missing subject location: {}'.format(location))
-        subject.add_location(location)
+    # path_prefix = "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/"
+    test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
+    # for location in locations:
+    for plot in test_plots:
+        if not os.path.isfile(plot):
+            raise FileNotFoundError('Missing subject location: {}'.format(plot))
+
+        subject.add_location(plot)
     subject.metadata.update(metadata)
 
-    # ==
-    # need to add subject to subject set
-    subject_set_name = subject_set_name #necessary line?
+    subject_set_name = subject_set_name 
     # Gets subject set 
     subject_set = get_or_create_subject_set(project.id)
 
@@ -157,8 +133,6 @@ def authenticate():
     load_dotenv()  # take environment variables from .env
     auth_username = os.environ.get("username")
     auth_password = os.environ.get("password")
-    # auth_username = username
-    # auth_password = password
     Panoptes.connect(username = auth_username, password = auth_password)
 
 def get_or_create_subject_set(project_id):
@@ -220,8 +194,6 @@ def create_subject_set(project_id):
     # return subject set test
     return subject_set
 
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
@@ -234,9 +206,5 @@ if __name__ == '__main__':
 
     # Interactions with database need to be done asynchronously 
     loop = asyncio.get_event_loop()
-    if not os.path.isfile("/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz"):
-        raise FileNotFoundError('Missing subject location: {}'.format("/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz"))
-    else:
-        print("success")
-    # loop.run_until_complete(upload_waterfalls_from_db(project_id))
+    loop.run_until_complete(upload_waterfalls_from_db(project_id))
     

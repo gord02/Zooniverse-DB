@@ -68,12 +68,12 @@ async def createEvent():
        	"event_number": 9386707,
 		"dm": 715.9,
 		"snr": 15.9,
-		"beam": 123,
+		"beams": 123,
 		"data_path": {
 			# "1166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/1166/9386707_1166_intensityML.npz",
 			# "0166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz",
-            "1166": "../../files_for_zoon/data/frb-archiver/9386707_1166_intensityML.npz",
-			"0166": "../../files_for_zoon/data/frb-archiver/9386707_0166_intensityML.npz"
+            "123": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_1166_intensityML.png",
+			"1234": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png"
         } ,
         "transfer_status": "INCOMPLETE",
         "zooniverse_classification": "INCOMPLETE",
@@ -85,7 +85,7 @@ async def createEvent():
         event_model["event_number"] = int(np.random.choice(range(9386707, 9396707)))
         event_model["dm"] = float(np.random.random() * 10000)
         event_model["snr"] = float(np.random.random() + 7.5)
-        event_model["beam"] = int(np.random.choice(range(3000, 3256)))
+        event_model["beam"] = int(np.random.choice(range(2000, 3256)))
         # event_model["beams"] = [
         #     int(
         #         np.random.choice(
@@ -97,14 +97,29 @@ async def createEvent():
         #     )
         #     for _ in range(np.random.choice(range(1, 5)))
         # ]
-        event_model["data_paths"] = {}
         # for beam in event_model["beams"]:
         #     event_model["data_paths"][beam] = f"path to {beam}"
+        # print("event_model[beam]: ", event_model["beam"]," beam: ", beam )
+        # event_model["data_paths"] = {
+        #     beam: f"{beam}_intensityML.npz",
+        #     beam: f"{beam}_intensityML_smooth.npz",
+        # }
         beam = event_model["beam"]
+        # event_model["data_paths"] = {}
         event_model["data_paths"] = {
-            beam: f"../../files_for_zoon/data/frb-archiver/{beam}_intensityML.npz",
-            beam: f"../../files_for_zoon/data/frb-archiver/{beam}_intensityML.npz",
-            }
+            str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
+            str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
+            # str(beam): str(event_model["beam"])+"_intensityML.png",
+            # str(beam): str(event_model["beam"])+"_intensityML.png",
+        }
+        # new_data_path_dict = {
+            
+        #     str(beam): "9386707_0166_intensityML.png",
+        #     str(beam): "9386707_0166_intensityML_smooth.png",
+        #     # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
+        #     # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
+        # }
+
 
         event_model["transfer_status"] = np.random.choice(
             ["INCOMPLETE"] * 100 + ["COMPLETE"] * 20 + ["CLEANED"] * 30 + ["FAILED"] * 10
@@ -128,6 +143,7 @@ async def createEvent():
 
         snr_value = event["snr"]
         beam_number = event["beam"]
+        # data_path = new_data_path_dict
         data_path = event["data_path"]
 
         beams_dict = {
