@@ -9,7 +9,6 @@ import math
 from typing import List, Dict
 import numpy as np
 
-
 import asyncio
 import nest_asyncio
 nest_asyncio.apply()
@@ -42,7 +41,7 @@ async def upload_waterfalls_from_db(project_id):
     logging.info(f'Waterfalls to upload: {len(waterfalls_not_uploaded)}')
 
     authenticate()
-    # need to be called here?
+
     get_or_create_subject_set(project_id)
 
     upload_waterfalls(waterfalls_not_uploaded, project_id)
@@ -59,11 +58,7 @@ def upload_waterfalls(waterfalls, project_id):
 
 async def uploader(waterfall, project):
     locations = waterfall['beams']['data_paths'].values()
-    # plot = list(locations)[0]
-    # plot_smooth = list(locations)[1]
-    # locations = waterfall['data_paths'].values()
-    # print("locations: ", locations)
-
+ 
     # Gets subject_set name
     subject_set = get_or_create_subject_set(project.id)
 
@@ -94,13 +89,11 @@ def upload_subject(locations: List, project: Project, metadata: Dict):
     subject = Subject()
     # subject is linked to project 
     subject.links.project = project
-    # path_prefix = "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/"
-    test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
+    # test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
     for location in locations:
-        i = int(np.random.choice(range(0, 2)))
-        if not os.path.isfile(test_plots[i]):
-            raise FileNotFoundError('Missing subject location: {}'.format(test_plots[i]))
-        subject.add_location(test_plots[i])
+        if not os.path.isfile(location):
+            raise FileNotFoundError('Missing subject location: {}'.format(location))
+        subject.add_location(location)
     subject.metadata.update(metadata)
 
     # Gets subject set 
@@ -127,12 +120,12 @@ def get_or_create_subject_set(project_id):
         # Puts the name, which is actually the date, of each subject_set into list
         list_of_subject_sets.append(subject_set.display_name)
 
-    # gets the specifc subject set I am working on for testing
-    # This should be changed to today's date variable to ensure no duplicates of a subject set with the same name
+    # gets the specifc subject set. Subject sets are deferriated by date
+    # If today's date is not currently apart of subject sets then create one
     # for each name of a subject_set inside list, check if the current date is already present in list
     for subject_set in project.links.subject_sets:
-        # if(date.today() == subject.display_name):
-        if('subject_set_test' == subject_set.display_name):
+        if(date.today() == subject.display_name):
+        # if('subject_set_test' == subject_set.display_name):
             # subject_set of current date already exists so use that subject set
             return subject_set
 
@@ -143,7 +136,7 @@ def create_subject_set(project_id):
     # creating subject set
     subject_set = SubjectSet()
     subject_set.links.project = Project(project_id)
-    name = date.today()
+    name = str(date.today())
     subject_set.display_name = name
     subject_set.save()
     return subject_set

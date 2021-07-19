@@ -1,5 +1,6 @@
 
 import numpy as np
+from datetime import date
 # import requests
 
 from mongoengine import connect, Document, FileField, StringField
@@ -64,16 +65,17 @@ class Event(Document):
 
 # The function is used to create event inside database
 async def createEvent():
+    test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
     event_model: dict = {
        	"event_number": 9386707,
 		"dm": 715.9,
 		"snr": 15.9,
 		"beams": 123,
 		"data_path": {
-			# "1166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/1166/9386707_1166_intensityML.npz",
-			# "0166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz",
-            "123": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_1166_intensityML.png",
-			"1234": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png"
+			# # "1166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/1166/9386707_1166_intensityML.npz",
+			# # "0166": "/data/frb-archiver/2018/07/25/astro_9386707/intensity/processed/0166/9386707_0166_intensityML.npz",
+            # "123": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_1166_intensityML.png",
+			# "1234": "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png"
         } ,
         "transfer_status": "INCOMPLETE",
         "zooniverse_classification": "INCOMPLETE",
@@ -81,7 +83,7 @@ async def createEvent():
     }
 
     # randomizes the event model so different events can populate the DB.
-    for _ in range(10):
+    for _ in range(1):
         event_model["event_number"] = int(np.random.choice(range(9386707, 9396707)))
         event_model["dm"] = float(np.random.random() * 10000)
         event_model["snr"] = float(np.random.random() + 7.5)
@@ -104,21 +106,28 @@ async def createEvent():
         #     beam: f"{beam}_intensityML.npz",
         #     beam: f"{beam}_intensityML_smooth.npz",
         # }
-        beam = event_model["beam"]
+        # beam = event_model["beam"]
+        # event_num = event_model["event_number"]
+        # the_date = str(date.today())
+
         # event_model["data_paths"] = {}
-        event_model["data_paths"] = {
-            str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
-            str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
-            # str(beam): str(event_model["beam"])+"_intensityML.png",
-            # str(beam): str(event_model["beam"])+"_intensityML.png",
-        }
-        # new_data_path_dict = {
-            
-        #     str(beam): "9386707_0166_intensityML.png",
-        #     str(beam): "9386707_0166_intensityML_smooth.png",
-        #     # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
-        #     # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
+        # event_model["data_paths"] = {
+        #     str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
+        #     str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
+        #     # str(beam): str(event_model["beam"])+"_intensityML.png",
+        #     # str(beam): str(event_model["beam"])+"_intensityML.png",
         # }
+        i = int(np.random.choice(range(0, 2)))
+        n = int(np.random.choice(range(0, 2)))
+        # just ingest data path no tweaking required 
+        new_data_path_dict = {
+            str(beam): test_plots[i],
+            # str(beam): "/data/chime/intensity/processed"+the_date+"astro_"+event_num+"/"+beam+"/"+event_num+"_"+beam+"_intensityML.png",
+            # test_plots[i],
+            str(beam): test_plots[n],
+            # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
+            # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
+        }
 
 
         event_model["transfer_status"] = np.random.choice(
@@ -143,8 +152,8 @@ async def createEvent():
 
         snr_value = event["snr"]
         beam_number = event["beam"]
-        # data_path = new_data_path_dict
-        data_path = event["data_path"]
+        data_path = new_data_path_dict
+        # data_path = event["data_path"]
 
         beams_dict = {
             "snr" : snr_value,
@@ -168,6 +177,6 @@ async def createEvent():
         # print("ID of added document %s" % repr(result.inserted_id))
 
 # Runs createEvent function asynchronously 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(createEvent())
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(createEvent())
 
