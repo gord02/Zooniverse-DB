@@ -98,41 +98,15 @@ async def createEvent():
         #     )
         #     for _ in range(np.random.choice(range(1, 5)))
         # ]
-        # for beam in event_model["beams"]:
-        #     event_model["data_paths"][beam] = f"path to {beam}"
-        # print("event_model[beam]: ", event_model["beam"]," beam: ", beam )
-        # event_model["data_paths"] = {
-        #     beam: f"{beam}_intensityML.npz",
-        #     beam: f"{beam}_intensityML_smooth.npz",
-        # }
-        # beam = event_model["beam"]
-        # event_num = event_model["event_number"]
-        # the_date = str(date.today())
-
-        # event_model["data_paths"] = {}
-        # event_model["data_paths"] = {
-        #     str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
-        #     str(beam): "/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/9386707_0166_intensityML.png",
-        #     # str(beam): str(event_model["beam"])+"_intensityML.png",
-        #     # str(beam): str(event_model["beam"])+"_intensityML.png",
-        # }
         beam = event_model["beam"]
         event_num = event_model["event_number"]
         i = int(np.random.choice(range(0, 2)))
         n = int(np.random.choice(range(0, 2)))
-        
         the_date = str(date.today())
 
-        # just ingest data path no tweaking required 
         new_data_path_dict = {
-            # str(beam): test_plots[i],/
             str(beam): "/data/chime/intensity/processed"+the_date+"astro_"+str(event_num)+"/"+str(beam)+"/"+str(event_num)+"_"+str(beam)+"_intensityML.png",
-            # test_plots[i],
-            # str(beam): test_plots[n],
-            # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
-            # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
         }
-
 
         event_model["transfer_status"] = np.random.choice(
             ["INCOMPLETE"] * 100 + ["COMPLETE"] * 20 + ["CLEANED"] * 30 + ["FAILED"] * 10
