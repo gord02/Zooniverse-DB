@@ -4,7 +4,7 @@ from sanic.response import HTTPResponse, json
 from sanic import Sanic
 import json as json_converter
 
-# allows sanic and mongoDB to work together 
+# allows Sanic and mongoDB to work together 
 import motor.motor_asyncio
 import asyncio
 
@@ -33,7 +33,6 @@ async def get_event_data_from_CHIME(request):
 
         event_number = data_dict["event"]
         dm_value = data_dict["dm"]
-        # transfer_status = data_dict["transfer_status"]
 
         snr_value = data_dict["snr"]
         beam_value = data_dict["beam_number"]
@@ -50,11 +49,8 @@ async def get_event_data_from_CHIME(request):
         document = {
             "event": event_number,
             "dm": dm_value, 
-            # how are multiple beam dict supposed to end up here
+            # how are multiple beam dict supposed to end up here ??
             "beams": beams_dict, 
-            # "transfer_status": transfer_status,
-            # "zooniverse_classification": "INCOMPLETE",
-            # "expert_classification": "INCOMPLETE"
         }
 
         result = await client.zooniverseDB.events.insert_one(document)
@@ -70,11 +66,10 @@ async def get_event_data_from_CHIME(request):
 @blueprint.get("event/<event_no>")
 async def get_event(request, event_no):
     try:
-        event_path= requests.get("https://frb.chimenet.ca/frb-master/v1/events/datapaths/147503727", headers=auth)
+        # event_path= requests.get("https://frb.chimenet.ca/frb-master/v1/events/datapaths/147503727", headers=auth)
         client = request.app.mongo.client
         items = []
         docs = db.events.find(
-            # when you execute find() method it displays all fields of a document. To limit this, you need to set a list of fields with value 1 or 0. 1 is used to show the field while 0 is used to hide the fields.
             {"event": int(event_no)}, projection={"_id": 0}
         )
         async for d in docs:
@@ -220,61 +215,5 @@ async def expert_classification(request, event_no, classification):
         print(str(e))
         raise
 
-# =========
 
 
-# import chime_frb_api
-# from chime_frb_api import frb_master
-
-# from zoondb.routines import composite, simple
-
-# @doc.summary("Seeder Routine")
-# @blueprint.get("simple")
-# async def get_seeder(request: Request) -> HTTPResponse:
-#     """Run Seeder Routine.
-
-#     Parameters
-#     ----------
-#     request : Request
-#         Request object from sanic app
-
-#     Returns
-#     -------
-#     HTTPResponse
-#     """
-#     example = simple.Simple('hex')
-#     return json(example.seedling())
-
-# @doc.summary("Composite Routine")
-# @blueprint.get("composite")
-# async def get_composite(request: Request) -> HTTPResponse:
-#     """Run Composite Routine.
-
-#     Parameters
-#     ----------
-#     request : Request
-#         Request object from sanic app
-
-#     Returns
-#     -------
-#     HTTPResponse
-#     """
-#     example = composite.Composite(1.0, 10.0, "hex")
-#     return json(example.get_random_integer())
-
-# @doc.summary("Hello from zooniverse-db!")
-# @blueprint.get("hello")
-# async def hello(request: Request) -> HTTPResponse:
-#     """Hello World.
-
-#     Parameters
-#     ----------
-#     request : Request
-#         Request object from sanic app
-
-#     Returns
-#     -------
-#     HTTPResponse
-#     """
-
-#     return json("Hello from zooniverse-db 🦧")

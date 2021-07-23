@@ -1,7 +1,6 @@
 
 import numpy as np
 from datetime import date
-# import requests
 
 from mongoengine import connect, Document, FileField, StringField
 from sanic_openapi import doc
@@ -44,9 +43,9 @@ class Beams:
 class Event(Document):
     event = doc.Integer("Event Number", required=True)
     dm = doc.Float("DM", required=True)
-    # snr = doc.Float("snr of the brightest beam", required=True)
+
     beams = [Beams()]
-    # beam = [Beams("beams document", required=True)]
+
     transfer_status = doc.String(
         "status of the transfer to zooniverse.",
         required=False,
@@ -65,7 +64,7 @@ class Event(Document):
 
 # The function is used to create event inside database
 async def createEvent():
-    test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
+    # test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
     event_model: dict = {
        	"event_number": 9386707,
 		"dm": 715.9,
@@ -83,7 +82,7 @@ async def createEvent():
     }
 
     # randomizes the event model so different events can populate the DB.
-    for _ in range(1):
+    for _ in range(3):
         event_model["event_number"] = int(np.random.choice(range(9386707, 9396707)))
         event_model["dm"] = float(np.random.random() * 10000)
         event_model["snr"] = float(np.random.random() + 7.5)
@@ -117,14 +116,19 @@ async def createEvent():
         #     # str(beam): str(event_model["beam"])+"_intensityML.png",
         #     # str(beam): str(event_model["beam"])+"_intensityML.png",
         # }
+        beam = event_model["beam"]
+        event_num = event_model["event_number"]
         i = int(np.random.choice(range(0, 2)))
         n = int(np.random.choice(range(0, 2)))
+        
+        the_date = str(date.today())
+
         # just ingest data path no tweaking required 
         new_data_path_dict = {
-            str(beam): test_plots[i],
-            # str(beam): "/data/chime/intensity/processed"+the_date+"astro_"+event_num+"/"+beam+"/"+event_num+"_"+beam+"_intensityML.png",
+            # str(beam): test_plots[i],/
+            str(beam): "/data/chime/intensity/processed"+the_date+"astro_"+str(event_num)+"/"+str(beam)+"/"+str(event_num)+"_"+str(beam)+"_intensityML.png",
             # test_plots[i],
-            str(beam): test_plots[n],
+            # str(beam): test_plots[n],
             # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
             # str(beam): str(event_model["beam"])+"_intensityML_smooth.npz",
         }
@@ -174,9 +178,8 @@ async def createEvent():
         # Connection to a database 
         db = client['zooniverseDB']
         result = await client.zooniverseDB.events.insert_one(document)
-        # print("ID of added document %s" % repr(result.inserted_id))
 
 # Runs createEvent function asynchronously 
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(createEvent())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(createEvent())
 

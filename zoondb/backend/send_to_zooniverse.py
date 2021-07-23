@@ -4,8 +4,6 @@ import os
 from datetime import date
 import logging
 import argparse
-import time
-import math
 from typing import List, Dict
 import numpy as np
 
@@ -42,8 +40,6 @@ async def upload_waterfalls_from_db(project_id):
 
     authenticate()
 
-    get_or_create_subject_set(project_id)
-
     upload_waterfalls(waterfalls_not_uploaded, project_id)
 
 
@@ -58,9 +54,6 @@ def upload_waterfalls(waterfalls, project_id):
 
 async def uploader(waterfall, project):
     locations = waterfall['beams']['data_paths'].values()
- 
-    # Gets subject_set name
-    subject_set = get_or_create_subject_set(project.id)
 
     id = waterfall['_id']
     # Updates the document in the database to have an upload date
@@ -71,6 +64,7 @@ async def uploader(waterfall, project):
     subject_id = upload_subject(locations=locations, project=project, metadata=metadata)
     # subject has been uploaded to Panoptes so now database needs to be updated to reflect this change knowing which specifc document was updated
     result = await db.events.update_one({'_id': id}, {'$set': {'subject_id': subject_id}}) 
+    result = await db.events.update_one({'_id': id}, {'$set': {'transfer_status': 'COMPLETE'}}) 
 
 def get_real_metadata(waterfall):
     return {
@@ -89,14 +83,17 @@ def upload_subject(locations: List, project: Project, metadata: Dict):
     subject = Subject()
     # subject is linked to project 
     subject.links.project = project
-    # test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot1.png','/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png']
+    test_plots = ['/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot2.png', '/Users/gordon/Desktop/zooniverse-db/files_for_zoon/data/frb-archiver/plot3.png'] # testing
     for location in locations:
-        if not os.path.isfile(location):
+        i = int(np.random.choice(range(0, 2))) # testing
+        if not os.path.isfile(test_plots[i]): # testing
+        # if not os.path.isfile(location):
             raise FileNotFoundError('Missing subject location: {}'.format(location))
-        subject.add_location(location)
+        # subject.add_location(location)
+        subject.add_location(test_plots[i]) #testing
     subject.metadata.update(metadata)
 
-    # Gets subject set 
+    # gets or creates subject set to push subject to
     subject_set = get_or_create_subject_set(project.id)
 
     # saving subject
@@ -112,31 +109,23 @@ def authenticate():
     Panoptes.connect(username = auth_username, password = auth_password)
 
 def get_or_create_subject_set(project_id):
-    # gets the project we are working on
-    project = Project.find(project_id)
-    list_of_subject_sets = []
-    #  loops through subject sets inside of subject sets list and stores all subject set names into a list
-    for subject_set in project.links.subject_sets:
-        # Puts the name, which is actually the date, of each subject_set into list
-        list_of_subject_sets.append(subject_set.display_name)
+    name = "gordon_testing_2" # testing
+    # name = str(date.today())
+    try:
+        # subjects sets are differentiated by date, their display names are the date they were created
+        # for the date that files are sent over to Zooniverse, first check if the date has already been created
+        return next(SubjectSet.where(project_id=project_id, display_name=name))
+    except StopIteration:
+        logging.info(f"Didn't find subject set {name} - creating it")
+        # if the date has not been used creeate the subject set with the today's date as its display name
+        return create_subject_set(project_id, name)
 
-    # gets the specifc subject set. Subject sets are deferriated by date
-    # If today's date is not currently apart of subject sets then create one
-    # for each name of a subject_set inside list, check if the current date is already present in list
-    for subject_set in project.links.subject_sets:
-        if(date.today() == subject.display_name):
-        # if('subject_set_test' == subject_set.display_name):
-            # subject_set of current date already exists so use that subject set
-            return subject_set
-
-    # subject set needs to be created
-    return create_subject_set(project_id)
-
-def create_subject_set(project_id):
+def create_subject_set(project_id, name):
     # creating subject set
     subject_set = SubjectSet()
     subject_set.links.project = Project(project_id)
-    name = str(date.today())
+    # name should just be today's date
+    name = name
     subject_set.display_name = name
     subject_set.save()
     return subject_set
