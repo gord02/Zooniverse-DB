@@ -1,6 +1,8 @@
 
 import json
 import os
+import schedule
+import time
 from datetime import date
 import logging
 import argparse
@@ -142,5 +144,12 @@ if __name__ == '__main__':
 
     # Interactions with database need to be done asynchronously 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(upload_waterfalls_from_db(project_id))
+    # Every thursday at 12pm, the function to run the send to Zooniverse code is run using Schedule
+    schedule.every().thursday.at("12:00").do(loop.run_until_complete(upload_waterfalls_from_db(project_id)))
+    # Loop so that the scheduled task keeps on running indefinitely
+    while True:
+        # Checks whether a scheduled task 
+        # is pending to run or not
+        schedule.run_pending()
+        time.sleep(1)
     
