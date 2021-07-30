@@ -15,6 +15,13 @@ numpy = "^1.20.3"
 python-dotenv = "^0.18.0"
 tqdm = "^4.61.1"
 panoptes-client = "^1.4.0"
+nest-asyncio = "^1.5.1"
+mongoengine = "^0.23.1"
+libmagic = "^1.0"
+python-magic-bin = "0.4.14"
+schedule = "^1.1.0"
+pytest = "^6.2.4"
+pytest-sanic = "1.6.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0.1"

@@ -1,18 +1,17 @@
 """Sample RESTful Framework."""
+import json as json_converter
+
+from sanic import Sanic
 from sanic.request import Request
 from sanic.response import HTTPResponse, json
-from sanic import Sanic
-import json as json_converter
+# Blueprint is a way to simplify the process of routing
+from sanic import Blueprint
+# imports simple way of applying doc string through framework sanic
+from sanic_openapi import doc
 
 # allows Sanic and mongoDB to work together 
 import motor.motor_asyncio
 import asyncio
-
-# Blueprint is a way to simplify the process of routing
-from sanic import Blueprint
-
-# imports simple way of applying doc string through framework sanic
-from sanic_openapi import doc
 
 from zoondb.backend import schema
 
@@ -66,12 +65,9 @@ async def get_event_data_from_CHIME(request):
 @blueprint.get("event/<event_no>")
 async def get_event(request, event_no):
     try:
-        # event_path= requests.get("https://frb.chimenet.ca/frb-master/v1/events/datapaths/147503727", headers=auth)
         client = request.app.mongo.client
         items = []
-        docs = db.events.find(
-            {"event": int(event_no)}, projection={"_id": 0}
-        )
+        docs = client.zooniverseDB.events.find({"event": int(event_no)}, projection={"_id": 0})
         async for d in docs:
             items.append(d)
         return json(items)
@@ -85,14 +81,11 @@ async def get_event(request, event_no):
 async def getAllEvents(request):
     try:
         client = request.app.mongo.client
-        total_number_of_events = await client.zooniverseDB.events.count_documents({})
-        print("total number of events: ", total_number_of_events, " type of: ", type(total_number_of_events))
-
+        # total_number_of_events = await client.zooniverseDB.events.count_documents({})
         items = []
         docs = client.zooniverseDB.events.find({})
         async for d in docs:
             items.append(d)
-
         return  json(True)
  
     except Exception as error:
@@ -106,7 +99,7 @@ async def update_event(request, event_no):
     print(request.json)
     try:
         client = request.app.mongo.client
-        client.zooniverse.events.find_one_and_update(
+        client.zooniverseDB.events.find_one_and_update(
             {"event": int(event_no)}, {"$set": request.json}, projection={"_id": 0}
         )
         return json(True)
@@ -120,7 +113,7 @@ async def update_event(request, event_no):
 async def delete_event(request, event_no):
     try:
         client = request.app.mongo.client
-        client.zooniverse.events.delete_one({"event": int(event_no)})
+        client.zooniverseDB.events.delete_one({"event": int(event_no)})
         return json(True)
     except Exception as e:
         print(str(e))
@@ -133,7 +126,7 @@ async def fetch_events_for_transfer(request):
     try:
         client = request.app.mongo.client
         items = []
-        docs = client.zooniverse.events.find(
+        docs = client.zooniverseDB.events.find(
             {"transfer_status": {"$in": ["INCOMPLETE", "FAILED"]}},
             projection={"_id": 0},
         )
@@ -151,7 +144,7 @@ async def fetch_events_for_cleanup(request):
     try:
         client = request.app.mongo.client
         items = []
-        docs = client.zooniverse.events.find(
+        docs = client.zooniverseDB.events.find(
             {"transfer_status": "COMPLETE", "zooniverse_classification": "BAD"},
             projection={"_id": 0},
         )
@@ -169,7 +162,7 @@ async def fetch_events_for_experts(request):
     try:
         client = request.app.mongo.client
         items = []
-        docs = client.zooniverse.events.find(
+        docs = client.zooniverseDB.events.find(
             {
                 "zooniverse_classification": "GOOD",
                 "expert_classification": "INCOMPLETE",
@@ -189,7 +182,7 @@ async def zooniverse_classification(request, event_no, classification):
     assert classification.upper() in ["GOOD", "BAD", "INCOMPLETE"]
     try:
         client = request.app.mongo.client
-        client.zooniverse.events.find_one_and_update(
+        client.zooniverseDB.events.find_one_and_update(
             {"event": int(event_no)},
             {"$set": {"zooniverse_classification": classification.upper()}},
             projection={"_id": 0},
@@ -205,7 +198,7 @@ async def expert_classification(request, event_no, classification):
     assert classification.upper() in ["GOOD", "BAD", "INCOMPLETE"]
     try:
         client = request.app.mongo.client
-        client.zooniverse.events.find_one_and_update(
+        client.zooniverseDB.events.find_one_and_update(
             {"event": int(event_no)},
             {"$set": {"expert_classification": classification.upper()}},
             projection={"_id": 0},
